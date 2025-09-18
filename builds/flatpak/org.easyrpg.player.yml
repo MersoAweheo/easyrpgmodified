@@ -1,0 +1,95 @@
+app-id: org.easyrpg.player
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: easyrpg-player
+rename-desktop-file: easyrpg-player.desktop
+rename-appdata-file: easyrpg-player.metainfo.xml
+rename-icon: easyrpg-player
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --filesystem=host # insecure, next is more secure
+#  - --filesystem=home # user can store games anywhere
+  - --device=all # needed for gamepad access
+  - --allow=devel
+cleanup:
+  - /include
+  - /lib/cmake
+  - /lib/pkgconfig
+  - /lib/*.so
+modules:
+  # external libraries
+  # this is copied from shared-modules to not add the dependency on it
+  - name: libfluidsynth
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    sources:
+      - type: git
+        url: https://github.com/FluidSynth/fluidsynth.git
+        tag: v2.3.4
+        commit: 5ecdc4568e45123216c6888892caad07918ef127
+    cleanup:
+      - /bin
+      - /share
+  - name: libfmt
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -DFMT_TEST=OFF
+      - -DBUILD_SHARED_LIBS=TRUE
+    sources:
+      - type: git
+        url: https://github.com/fmtlib/fmt.git
+        tag: '9.1.0'
+        commit: a33701196adfad74917046096bf5a2aa0ab0bb50
+  - name: libxmp
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -DBUILD_STATIC=OFF
+      - -DLIBXMP_DISABLE_DEPACKERS=ON
+      - -DLIBXMP_DISABLE_PROWIZARD=ON
+    sources:
+      - type: git
+        url: https://github.com/libxmp/libxmp.git
+        tag: libxmp-4.6.0
+        commit: 8201d26cf933688a8be64292457c429fd8e654ab
+  - name: libinih
+    buildsystem: meson
+    config-opts:
+      - --buildtype=debugoptimized
+    sources:
+      - type: git
+        url: https://github.com/benhoyt/inih.git
+        tag: 58
+        commit: 5cc5e2c24642513aaa5b19126aad42d0e4e0923e
+  # own libraries
+  - name: liblcf
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -DLIBLCF_ENABLE_TOOLS=OFF
+      - -DLIBLCF_WITH_XML=OFF
+      - -DLIBLCF_ENABLE_TESTS=OFF
+      - -DLIBLCF_UPDATE_MIMEDB=OFF
+    sources:
+      - type: git
+        url: https://github.com/EasyRPG/liblcf.git
+    cleanup:
+      - /share
+  - name: player
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -DPLAYER_VERSION_APPEND='(Flatpak)'
+    sources:
+      - type: git
+        url: https://github.com/EasyRPG/Player.git
+    cleanup:
+      - /share/bash-completion
+      - /share/pixmaps
